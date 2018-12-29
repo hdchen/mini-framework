@@ -15,10 +15,10 @@ RocketMQ架构上主要分为四部分，如上图所示:
 - BrokerServer：Broker主要负责消息的存储、投递和查询以及服务高可用保证，为了实现这些功能broker包含了以下几个重要子模块。
 
 1.Remoting Module：整个broker的实体，负责处理来自clients端的请求。
- 2.Client Manager：负责管理客户端(Producer/Consumer)和维护Consumer的topic订阅信息
- 3.Store Service：提供方便简单的API接口处理消息存储到物理硬盘和查询功能。
- 4.HA Service：高可用服务，提供master broker 和 slave broker之间的数据同步功能。
- 5.Index Service：根据特定的Message key对投递到broker的消息进行索引服务，以提供消息的快速查询。
+2.Client Manager：负责管理客户端(Producer/Consumer)和维护Consumer的topic订阅信息
+3.Store Service：提供方便简单的API接口处理消息存储到物理硬盘和查询功能。
+4.HA Service：高可用服务，提供master broker 和 slave broker之间的数据同步功能。
+5.Index Service：根据特定的Message key对投递到broker的消息进行索引服务，以提供消息的快速查询。
 
 ![](image/rocketmq_architecture_2.png)
 
@@ -28,14 +28,13 @@ RocketMQ架构上主要分为四部分，如上图所示:
 ![](image/rocketmq_architecture_3.png)
 
 
-###RocketMQ 网络部署特点
+### RocketMQ 网络部署特点
 - NameServer 是一个几乎无状态节点，可集群部署，节点之间无任何信息同步。
 - Broker 部署相对复杂，Broker 分为Master 与Slave，一个Master 可以对应多个Slave，但是一个Slave 只能对应一个Master，Master 与Slave 的对应关系通过指定相同的BrokerName，不同的BrokerId 来定义，BrokerId 为0 表示Master，非0 表示Slave。Master 也可以部署多个。每个Broker 与Name Server 集群中的所有节点建立长连接，定时注册Topic 信息到所有Name Server。 注意：当前RocketMQ版本在部署架构上支持一master多slave，但只有brokerId=1的从服务器才会参与消息的读负载。
 - Producer与NameServer 集群中的其中一个节点（随机选择）建立长连接，定期从NameServer 获取Topic 路由信息，并向提供Topic 服务的Master 建立长连接，且定时向Master 发送心跳。Producer 完全无状态，可集群部署。
 - Consumer与NameServer 集群中的其中一个节点（随机选择）建立长连接，定期从NameServer取Topic路由信息，并向提供Topic服务的Master、Slave建立长连接，且定时向Master、Slave发送心跳。Consumer既可以从Master订阅消息，也可以从Slave订阅消息，消费者在向master拉取消息时Master服务器会根据拉取偏移量与最大偏移量的距离（判断是否读老消息，产生读IO），以及从服务器是否可读等因素建议下一次是从Master还是Slave拉取。
 
 结合部署结构图，描述集群工作流程：
-
 
 1. 启动Namesrv，Namesrv起来后监听端口，等待Broker、Produer、Consumer连上来，相当于一个路由控制中心。
 2. Broker启动，跟所有的Namesrv保持长连接，定时发送心跳包。心跳包中包含当前Broker信息(IP+端口等)以及存储所有topic信息。注册成功后，namesrv集群中就有Topic跟Broker的映射关系
